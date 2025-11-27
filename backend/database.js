@@ -18,7 +18,6 @@ async function testConnection() {
     try {
         const connection = await pool.getConnection();
         
-        // Test dengan query sederhana
         await connection.execute('SELECT 1');
         
         connection.release();
@@ -106,7 +105,7 @@ async function updateBarangKondisi(id_barang, kondisi) {
     return result;
 }
 
-// FUNGSI DELETE BARANG - FIX
+
 async function deleteBarang(id_barang) {
     const connection = await pool.getConnection();
     

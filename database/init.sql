@@ -1,8 +1,7 @@
--- Create database jika belum ada
-CREATE DATABASE IF NOT EXISTS paket_pondok;
+-- Create database and user (already done by environment variables)
 USE paket_pondok;
 
--- Table kobong
+-- Tabel kobong/kamar
 CREATE TABLE IF NOT EXISTS kobong (
     id_kobong INT AUTO_INCREMENT PRIMARY KEY,
     nama_kamar VARCHAR(100) NOT NULL,
@@ -10,40 +9,34 @@ CREATE TABLE IF NOT EXISTS kobong (
     no_wa VARCHAR(20) NOT NULL
 );
 
--- Table barang
+-- Tabel barang/paket
 CREATE TABLE IF NOT EXISTS barang (
     id_barang INT AUTO_INCREMENT PRIMARY KEY,
-    id_kobong INT NOT NULL,
+    id_kobong INT,
     nama_pengirim VARCHAR(100) NOT NULL,
     nama_penerima VARCHAR(100) NOT NULL,
     jenis_barang VARCHAR(50) NOT NULL,
     kondisi ENUM('baik', 'cepat_basi', 'rusak') DEFAULT 'baik',
     status ENUM('masuk', 'diambil', 'rusak') DEFAULT 'masuk',
     catatan TEXT,
-    tanggal_datang TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    tanggal_diambil TIMESTAMP NULL,
+    tanggal_datang DATETIME DEFAULT CURRENT_TIMESTAMP,
+    tanggal_diambil DATETIME NULL,
+    foto_bukti VARCHAR(255) NULL,
     FOREIGN KEY (id_kobong) REFERENCES kobong(id_kobong)
 );
 
--- Table log_aktivitas
+-- Tabel log aktivitas
 CREATE TABLE IF NOT EXISTS log_aktivitas (
     id_log INT AUTO_INCREMENT PRIMARY KEY,
-    id_barang INT NOT NULL,
+    id_barang INT,
     aksi VARCHAR(50) NOT NULL,
     deskripsi TEXT NOT NULL,
-    waktu TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    FOREIGN KEY (id_barang) REFERENCES barang(id_barang) ON DELETE CASCADE
+    waktu DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (id_barang) REFERENCES barang(id_barang)
 );
 
--- Insert sample data kobong
+-- Sample data untuk kobong
 INSERT IGNORE INTO kobong (id_kobong, nama_kamar, nama_pembimbing, no_wa) VALUES
-(1, 'A-101', 'Ustadz Ahmad', '6281234567890'),
-(2, 'A-102', 'Ustadz Bambang', '6281234567891'),
-(3, 'B-201', 'Ustadz Cahyo', '6281234567892'),
-(4, 'B-202', 'Ustadz Dani', '6281234567893');
-
--- Insert sample data barang
-INSERT IGNORE INTO barang (id_barang, id_kobong, nama_pengirim, nama_penerima, jenis_barang, kondisi, status, catatan) VALUES
-(1, 1, 'Orang Tua', 'Ahmad', 'Makanan', 'cepat_basi', 'masuk', 'Martabak manis'),
-(2, 2, 'Kakak', 'Budi', 'Pakaian', 'baik', 'diambil', 'Baju koko baru'),
-(3, 3, 'Ibu', 'Cahyo', 'Buku', 'baik', 'masuk', 'Kitab kuning');
+(1, 'Al-Falah', 'Ustadz Ahmad', '628123456789'),
+(2, 'Ar-Rahman', 'Ustadz Ali', '628987654321'),
+(3, 'An-Nur', 'Ustadzah Siti', '628111223344');

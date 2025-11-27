@@ -60,7 +60,7 @@ app.post("/api/barang", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-// ENDPOINT UNTUK KIRIM NOTIFIKASI MANUAL
+// ENDPOINT UNTUK KIRIM NOTIFIKASI
 app.post('/api/barang/:id/remind', async (req, res) => {
     try {
         const barang = await db.getBarangById(req.params.id);
@@ -142,7 +142,7 @@ app.put("/api/barang/:id/kondisi", async (req, res) => {
         res.status(500).json({ error: error.message });
     }
 });
-// ENDPOINT STATUS DATABASE YANG REAL
+// ENDPOINT STATUS DATABASE
 app.get("/api/status/database", async (req, res) => {
   try {
     // Test koneksi database
@@ -161,7 +161,7 @@ app.get("/api/status/database", async (req, res) => {
   }
 });
 
-// ENDPOINT STATUS WHATSAPP YANG REAL
+// ENDPOINT STATUS WHATSAPP
 app.get("/api/status/whatsapp", async (req, res) => {
   try {
     const status = whatsappService.getStatus();
@@ -186,7 +186,7 @@ app.get("/api/status/whatsapp", async (req, res) => {
     });
   }
 });
-// DELETE BARANG - FIX
+// DELETE BARANG
 app.delete("/api/barang/:id", async (req, res) => {
   try {
     const result = await db.deleteBarang(req.params.id);
@@ -213,7 +213,7 @@ app.get("/api/log", async (req, res) => {
   }
 });
 
-// ENDPOINT LAPORAN EXCEL - REAL (PERBAIKI QUERY)
+// ENDPOINT LAPORAN EXCEL
 app.get("/api/report/excel", async (req, res) => {
   try {
     const { tanggal_awal, tanggal_akhir, type } = req.query;
@@ -317,7 +317,7 @@ app.get("/api/report/excel", async (req, res) => {
   }
 });
 
-// ENDPOINT LAPORAN PDF - REAL (PERBAIKI QUERY)
+// ENDPOINT LAPORAN PDF
 app.get("/api/report/pdf", async (req, res) => {
   try {
     const { tanggal_awal, tanggal_akhir, type } = req.query;
