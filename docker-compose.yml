@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - DB_HOST=mysql
+      - DB_USER=root
+      - DB_PASSWORD=password
+      - DB_NAME=paket_pondok
+      - NODE_ENV=production
+    depends_on:
+      - mysql
+    volumes:
+      - ./backend:/app
+      - ./frontend:/app/../frontend
+    networks:
+      - paket-network
+
+  mysql:
+    image: mysql:8.0
+    environment:
+      - MYSQL_ROOT_PASSWORD=password
+      - MYSQL_DATABASE=paket_pondok
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - paket-network
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    environment:
+      - PMA_HOST=mysql
+      - PMA_PORT=3306
+      - MYSQL_ROOT_PASSWORD=password
+    ports:
+      - "8080:80"
+    depends_on:
+      - mysql
+    networks:
+      - paket-network
+
+networks:
+  paket-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
