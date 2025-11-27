@@ -4,11 +4,11 @@ const db = require("../database");
 
 class WhatsAppService {
   constructor() {
-    console.log("🔄 Initializing WhatsApp Service untuk notifikasi...");
+    console.log("🔄 Initializing WhatsApp Service...");
 
     this.client = new Client({
       authStrategy: new LocalAuth({
-        clientId: "paket-pondok-notif",
+        clientId: "paket-pondok-notif"
       }),
       puppeteer: {
         headless: true,
@@ -16,14 +16,18 @@ class WhatsAppService {
           "--no-sandbox",
           "--disable-setuid-sandbox",
           "--disable-dev-shm-usage",
-        ],
-      },
+          "--disable-accelerated-2d-canvas",
+          "--no-first-run",
+          "--no-zygote",
+          "--disable-gpu"
+        ]
+        // HAPUS executablePath untuk Windows
+      }
     });
 
     this.isReady = false;
     this.qrCode = null;
-    this.qrCodeListeners = [];
-    this.sentReminders = new Map();
+    this.statusListeners = [];
 
     this.setupEvents();
   }
@@ -32,103 +36,104 @@ class WhatsAppService {
     console.log("🔧 Setting up WhatsApp events...");
 
     this.client.on("qr", async (qr) => {
-      console.log("📱 QR Code received...");
+      console.log("📱 QR Code received, generating for frontend...");
       try {
+        // Generate QR code untuk frontend
         this.qrCode = await qrcode.toDataURL(qr);
-        console.log("✅ QR Code generated");
-        this.notifyQRCodeListeners();
+        console.log("✅ QR Code generated for frontend");
+        this.notifyStatusChange();
       } catch (error) {
         console.error("❌ Error generating QR code:", error);
+        this.qrCode = qr; // Fallback
+        this.notifyStatusChange();
       }
     });
 
     this.client.on("ready", () => {
-      console.log("✅ WhatsApp client ready untuk kirim notifikasi!");
+      console.log("✅ WhatsApp client is ready!");
       this.isReady = true;
       this.qrCode = null;
-      this.notifyQRCodeListeners();
-      this.startMonitoring();
+      this.notifyStatusChange();
+    });
+
+    this.client.on("authenticated", () => {
+      console.log("✅ WhatsApp authenticated successfully");
     });
 
     this.client.on("auth_failure", (msg) => {
       console.error("❌ WhatsApp auth failed:", msg);
       this.isReady = false;
       this.qrCode = null;
-      this.notifyQRCodeListeners();
+      this.notifyStatusChange();
     });
 
     this.client.on("disconnected", (reason) => {
       console.log("❌ WhatsApp disconnected:", reason);
       this.isReady = false;
       this.qrCode = null;
-      this.notifyQRCodeListeners();
-
+      this.notifyStatusChange();
+      
+      // Auto restart
       setTimeout(() => {
+        console.log("🔄 Auto-restarting WhatsApp...");
         this.initialize();
       }, 5000);
     });
+  }
 
-    // HANYA KIRIM NOTIF, TIDAK TERIMA PESAN
-    this.client.on("message", async (message) => {
-      // Ignore semua pesan masuk
-      return;
+  // Untuk frontend bisa subscribe ke status changes
+  onStatusChange(callback) {
+    this.statusListeners.push(callback);
+  }
+
+  notifyStatusChange() {
+    const status = this.getStatus();
+    this.statusListeners.forEach(callback => {
+      try {
+        callback(status);
+      } catch (error) {
+        console.error("Error in status listener:", error);
+      }
     });
   }
 
-  async startMonitoring() {
-    console.log("🔍 Starting monitoring untuk barang cepat basi...");
-
-    // Cek setiap 30 menit
-    setInterval(async () => {
-      await this.checkBarangCepatBasi();
-    }, 30 * 60 * 1000);
-
-    // Cek sekali saat start
-    await this.checkBarangCepatBasi();
+  initialize() {
+    try {
+      console.log("🚀 Initializing WhatsApp client...");
+      this.client.initialize();
+    } catch (error) {
+      console.error("❌ Failed to initialize WhatsApp:", error);
+    }
   }
 
-  async checkBarangCepatBasi() {
-    try {
-      const barangCepatBasi = await db.getBarangCepatBasi();
-      console.log(`🔍 Found ${barangCepatBasi.length} barang cepat basi`);
-
-      for (const barang of barangCepatBasi) {
-        const reminderKey = `${barang.id_barang}_reminder`;
-
-        if (!this.sentReminders.has(reminderKey)) {
-          console.log(`📤 Sending reminder for barang ${barang.id_barang}`);
-          await this.sendReminder(barang);
-          this.sentReminders.set(reminderKey, Date.now());
-        }
-      }
-    } catch (error) {
-      console.error("Error checking barang cepat basi:", error);
-    }
+  getStatus() {
+    return {
+      isReady: this.isReady,
+      isConnected: this.isReady,
+      qrCode: this.qrCode,
+      timestamp: new Date().toISOString()
+    };
   }
 
   async sendReminder(barang) {
     if (!this.isReady) {
-      console.log("WhatsApp not ready, skipping reminder");
-      return;
+      console.log("❌ WhatsApp not ready, cannot send reminder");
+      return false;
     }
 
     try {
       let phoneNumber = barang.no_wa.trim();
       phoneNumber = phoneNumber.replace(/\D/g, "");
 
+      // Format nomor
       if (phoneNumber.startsWith("0")) {
         phoneNumber = "62" + phoneNumber.substring(1);
       }
-
       if (!phoneNumber.startsWith("62")) {
         phoneNumber = "62" + phoneNumber;
       }
 
-      console.log(`📞 Sending to: ${phoneNumber}`);
-
-      if (phoneNumber.length < 10) {
-        throw new Error(`Nomor tidak valid: ${phoneNumber}`);
-      }
+      console.log(`📤 Sending reminder to: ${phoneNumber} (${barang.nama_pembimbing})`);
 
       const chatId = `${phoneNumber}@c.us`;
 
@@ -139,71 +144,40 @@ class WhatsAppService {
 • Pengirim: *${barang.nama_pengirim}*  
 • Penerima: *${barang.nama_penerima}*
 • Kamar: ${barang.nama_kamar}
-• Datang Pada Pukul: *${new Date(barang.tanggal_datang).toLocaleTimeString("id-ID", {
-        hour: "2-digit",
-        minute: "2-digit",
-      })}*
+• Datang: ${new Date(barang.tanggal_datang).toLocaleDateString('id-ID')}
 
 💡 *Pesan:*
-Paket ini cepat basi, jika tidak di ambil dalam 24 jam, maka akan menjadi hak keamanan.
+Paket ini cepat basi, jika tidak diambil dalam 24 jam, maka akan menjadi hak keamanan.
 
 📝 *Catatan:* ${barang.catatan || "Tidak ada catatan"}
 
-*-- Alf-Paket --*`;
+*-- Sistem Paket Pondok --*`;
 
       await this.client.sendMessage(chatId, message);
       console.log(`✅ Notifikasi terkirim ke ${barang.nama_pembimbing}`);
-
-      // Log aktivitas
-      await db.query(
-        "INSERT INTO log_aktivitas (id_barang, aksi, deskripsi) VALUES (?, 'notif_cepat_basi', ?)",
-        [barang.id_barang, `WhatsApp notif sent to ${barang.nama_pembimbing}`]
-      );
+      
+      return true;
     } catch (error) {
       console.error("❌ Error sending reminder:", error.message);
+      return false;
     }
-  }
-
-  onQRCodeChange(callback) {
-    this.qrCodeListeners.push(callback);
-  }
-
-  notifyQRCodeListeners() {
-    this.qrCodeListeners.forEach((callback) => {
-      callback({
-        qrCode: this.qrCode,
-        isReady: this.isReady,
-      });
-    });
-  }
-
-  initialize() {
-    this.client.initialize();
-  }
-
-  getStatus() {
-    return {
-      isReady: this.isReady,
-      isConnected: this.isReady,
-      qrCode: this.qrCode,
-    };
   }
 
   async restart() {
     try {
+      console.log("🔄 Restarting WhatsApp service...");
       await this.client.destroy();
       this.isReady = false;
       this.qrCode = null;
-      this.sentReminders.clear();
-      this.notifyQRCodeListeners();
+      this.notifyStatusChange();
 
       setTimeout(() => {
         this.initialize();
-      }, 2000);
+      }, 3000);
 
       return true;
     } catch (error) {
-      console.error("Error restarting WhatsApp:", error);
+      console.error("❌ Error restarting WhatsApp:", error);
       return false;
     }
   }

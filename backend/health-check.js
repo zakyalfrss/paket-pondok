@@ -1,22 +1,26 @@
 const mysql = require('mysql2/promise');
 
 const dbConfig = {
-    host: process.env.DB_HOST || 'mysql',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || 'password',
-    database: process.env.DB_NAME || 'paket_pondok',
+    host: 'localhost',
+    user: 'root',
+    password: '',
+    database: 'paket_pondok',
     port: 3306
 };
 
 async function checkHealth() {
+    let connection;
     try {
-        const connection = await mysql.createConnection(dbConfig);
+        console.log('🔍 Testing database connection...');
+        connection = await mysql.createConnection(dbConfig);
         await connection.execute('SELECT 1');
-        await connection.end();
-        process.exit(0); // Healthy
+        console.log('✅ Database health check passed');
+        process.exit(0);
     } catch (error) {
-        console.error('Health check failed:', error.message);
-        process.exit(1); // Unhealthy
+        console.error('❌ Health check failed:', error.message);
+        process.exit(1);
+    } finally {
+        if (connection) await connection.end();
     }
 }
 

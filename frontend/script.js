@@ -574,7 +574,249 @@ function startQRPolling() {
   }, 3000);
   checkWhatsAppStatus();
 }
+// ===== CRUD KAMAR FUNCTIONS =====
 
+function showKamarForm(kamar = null) {
+  const formContainer = document.getElementById('form-kamar-container');
+  const formTitle = document.getElementById('form-kamar-title');
+  const form = document.getElementById('form-kamar');
+  
+  if (kamar) {
+    // Edit mode
+    formTitle.textContent = 'Edit Kamar';
+    document.getElementById('kamar-id').value = kamar.id_kobong;
+    document.getElementById('kamar-nama').value = kamar.nama_kamar;
+    document.getElementById('kamar-pembimbing').value = kamar.nama_pembimbing;
+    document.getElementById('kamar-nowa').value = kamar.no_wa;
+  } else {
+    // Add mode
+    formTitle.textContent = 'Tambah Kamar Baru';
+    form.reset();
+    document.getElementById('kamar-id').value = '';
+  }
+  
+  formContainer.style.display = 'block';
+}
+
+function hideKamarForm() {
+  document.getElementById('form-kamar-container').style.display = 'none';
+}
+
+// Load data kamar
+async function loadKamarData() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/kobong`);
+    kobongData = await response.json();
+    displayKamarData(kobongData);
+    
+    // Update dropdowns di form paket
+    updateKobongDropdowns();
+  } catch (error) {
+    console.error('Error loading kamar data:', error);
+    showAlert('Gagal memuat data kamar', 'error');
+  }
+}
+
+// Display data kamar di table
+function displayKamarData(data) {
+  const tbody = document.querySelector('#table-kamar tbody');
+  tbody.innerHTML = '';
+
+  data.forEach((kamar, index) => {
+    const row = document.createElement('tr');
+    row.innerHTML = `
+      <td>${index + 1}</td>
+      <td>${kamar.nama_kamar}</td>
+      <td>${kamar.nama_pembimbing}</td>
+      <td>${kamar.no_wa}</td>
+      <td class="action-buttons">
+        <button onclick="editKamar(${kamar.id_kobong})" class="btn-small btn-edit">
+          <i class="fas fa-edit"></i> Edit
+        </button>
+        <button onclick="deleteKamar(${kamar.id_kobong})" class="btn-small btn-delete">
+          <i class="fas fa-trash"></i> Hapus
+        </button>
+      </td>
+    `;
+    tbody.appendChild(row);
+  });
+}
+
+// Update dropdown kamar di form paket
+function updateKobongDropdowns() {
+  const kobongSelect = document.getElementById('id_kobong');
+  const filterKobong = document.getElementById('filter-kobong');
+
+  kobongSelect.innerHTML = '<option value="">Pilih Kamar</option>';
+  filterKobong.innerHTML = '<option value="">Semua Kamar</option>';
+
+  kobongData.forEach((kamar) => {
+    const option = `<option value="${kamar.id_kobong}">${kamar.nama_kamar} - ${kamar.nama_pembimbing}</option>`;
+    kobongSelect.innerHTML += option;
+    filterKobong.innerHTML += option;
+  });
+}
+
+// Edit kamar
+function editKamar(id) {
+  const kamar = kobongData.find(k => k.id_kobong == id);
+  if (kamar) {
+    showKamarForm(kamar);
+  }
+}
+
+// Delete kamar
+async function deleteKamar(id) {
+  const kamar = kobongData.find(k => k.id_kobong == id);
+  if (!kamar) return;
+
+  if (!confirm(`Hapus kamar "${kamar.nama_kamar}"?`)) return;
+
+  try {
+    const response = await fetch(`${API_BASE_URL}/kobong/${id}`, {
+      method: 'DELETE'
+    });
+
+    const result = await response.json();
+
+    if (result.success) {
+      showAlert('Kamar berhasil dihapus', 'success');
+      loadKamarData();
+    } else {
+      throw new Error(result.error);
+    }
+  } catch (error) {
+    console.error('Error deleting kamar:', error);
+    showAlert('Gagal menghapus kamar: ' + error.message, 'error');
+  }
+}
+
+// Form submission untuk kamar
+document.getElementById('form-kamar').addEventListener('submit', async function(e) {
+  e.preventDefault();
+
+  const formData = {
+    nama_kamar: document.getElementById('kamar-nama').value,
+    nama_pembimbing: document.getElementById('kamar-pembimbing').value,
+    no_wa: document.getElementById('kamar-nowa').value
+  };
+
+  const kamarId = document.getElementById('kamar-id').value;
+
+  try {
+    let response;
+    if (kamarId) {
+      // Update existing
+      response = await fetch(`${API_BASE_URL}/kobong/${kamarId}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+    } else {
+      // Create new
+      response = await fetch(`${API_BASE_URL}/kobong`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+    }
+
+    const result = await response.json();
+
+    if (result.success) {
+      showAlert(`Kamar berhasil ${kamarId ? 'diupdate' : 'ditambahkan'}`, 'success');
+      hideKamarForm();
+      loadKamarData();
+    } else {
+      throw new Error(result.error);
+    }
+  } catch (error) {
+    console.error('Error saving kamar:', error);
+    showAlert('Gagal menyimpan kamar: ' + error.message, 'error');
+  }
+});
+
+// ===== PERBAIKI WHATSAPP QR CODE =====
+
+async function checkWhatsAppStatus() {
+  try {
+    const response = await fetch(`${API_BASE_URL}/whatsapp/status`);
+    if (!response.ok) throw new Error("Network response was not ok");
+
+    const status = await response.json();
+    updateWhatsAppStatus(status);
+  } catch (error) {
+    console.error("Error checking WhatsApp status:", error);
+    updateWhatsAppStatus({ isReady: false, qrCode: null });
+  }
+}
+
+function updateWhatsAppStatus(status) {
+  const waStatusElement = document.getElementById("wa-status");
+  const qrImage = document.getElementById("qr-code-image");
+  const qrContainer = document.getElementById("qr-code-container");
+  const waConnected = document.getElementById("wa-connected");
+
+  if (status.isReady) {
+    waStatusElement.textContent = "Online";
+    waStatusElement.className = "status online";
+    qrContainer.style.display = "none";
+    waConnected.style.display = "block";
+  } else if (status.qrCode) {
+    waStatusElement.textContent = "Scan QR";
+    waStatusElement.className = "status connecting";
+    
+    // QR Code dari backend sudah dalam format data URL
+    qrImage.src = status.qrCode;
+    qrContainer.style.display = "block";
+    waConnected.style.display = "none";
+    
+    console.log("📱 QR Code received, showing in modal");
+  } else {
+    waStatusElement.textContent = "Offline";
+    waStatusElement.className = "status offline";
+    qrContainer.style.display = "none";
+    waConnected.style.display = "none";
+  }
+}
+
+// ===== UPDATE INITIALIZE APP =====
+
+async function initializeApp() {
+  await loadKamarData();  // Load data kamar dulu
+  await loadBarangData();
+  await loadLogData();
+  updateSystemStatus();
+  updateStats();
+  toggleReportFields();
+  updateReportButtons();
+}
+
+// Update openTab function untuk handle tab kamar
+function openTab(tabName) {
+  const tabContents = document.getElementsByClassName("tab-content");
+  for (let i = 0; i < tabContents.length; i++) {
+    tabContents[i].classList.remove("active");
+  }
+
+  const tabButtons = document.getElementsByClassName("tab-button");
+  for (let i = 0; i < tabButtons.length; i++) {
+    tabButtons[i].classList.remove("active");
+  }
+
+  document.getElementById(tabName).classList.add("active");
+  event.currentTarget.classList.add("active");
+
+  if (tabName === "daftar") {
+    loadBarangData();
+  } else if (tabName === "kamar") {
+    loadKamarData();
+  } else if (tabName === "log") {
+    loadLogData();
+  } else if (tabName === "laporan") {
+    updateStats();
+  }
+}
 // ===== PREVIEW LAPORAN FUNCTIONS =====
 let currentReportData = null;
 let currentReportType = null;

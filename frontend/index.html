@@ -33,6 +33,10 @@
         <button class="tab-button" onclick="openTab('daftar')">
           <i class="fas fa-list"></i> Daftar Paket
         </button>
+        <!-- TAB BARU UNTUK KAMAR -->
+        <button class="tab-button" onclick="openTab('kamar')">
+          <i class="fas fa-door-closed"></i> Data Kamar
+        </button>
         <button class="tab-button" onclick="openTab('log')">
           <i class="fas fa-history"></i> Log Aktivitas
         </button>
@@ -40,7 +44,81 @@
           <i class="fas fa-chart-bar"></i> Laporan
         </button>
       </nav>
+      <!-- Tambah tab content untuk kamar -->
+      <div id="kamar" class="tab-content">
+        <div class="card">
+          <div class="card-header">
+            <h2><i class="fas fa-door-closed"></i> Data Kamar (Kobong)</h2>
+            <button onclick="showKamarForm()" class="btn-primary">
+              <i class="fas fa-plus"></i> Tambah Kamar
+            </button>
+          </div>
 
+          <!-- Form Tambah/Edit Kamar -->
+          <div
+            id="form-kamar-container"
+            style="
+              display: none;
+              margin-bottom: 20px;
+              padding: 20px;
+              background: #f9f9f9;
+              border-radius: 8px;
+            "
+          >
+            <h3 id="form-kamar-title">Tambah Kamar Baru</h3>
+            <form id="form-kamar">
+              <input type="hidden" id="kamar-id" />
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="kamar-nama">Nama Kamar:</label>
+                  <input type="text" id="kamar-nama" required />
+                </div>
+                <div class="form-group">
+                  <label for="kamar-pembimbing">Nama Pembimbing:</label>
+                  <input type="text" id="kamar-pembimbing" required />
+                </div>
+                <div class="form-group">
+                  <label for="kamar-nowa">No WhatsApp:</label>
+                  <input
+                    type="text"
+                    id="kamar-nowa"
+                    required
+                    placeholder="628123456789"
+                  />
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn-primary">
+                  <i class="fas fa-save"></i> Simpan
+                </button>
+                <button
+                  type="button"
+                  onclick="hideKamarForm()"
+                  class="btn-secondary"
+                >
+                  <i class="fas fa-times"></i> Batal
+                </button>
+              </div>
+            </form>
+          </div>
+
+          <!-- Daftar Kamar -->
+          <div class="table-container">
+            <table id="table-kamar">
+              <thead>
+                <tr>
+                  <th>No</th>
+                  <th>Nama Kamar</th>
+                  <th>Pembimbing</th>
+                  <th>No WhatsApp</th>
+                  <th>Aksi</th>
+                </tr>
+              </thead>
+              <tbody></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
       <!-- Tab Input Paket -->
       <div id="input" class="tab-content active">
         <div class="card">
@@ -282,7 +360,6 @@
         <h3>Detail Paket</h3>
         <div id="modal-body"></div>
       </div>
-      
     </div>
 
     <!-- Modal untuk QR Code WhatsApp -->

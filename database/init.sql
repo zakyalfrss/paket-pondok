@@ -37,6 +37,6 @@ CREATE TABLE IF NOT EXISTS log_aktivitas (
 
 -- Sample data untuk kobong
 INSERT IGNORE INTO kobong (id_kobong, nama_kamar, nama_pembimbing, no_wa) VALUES
-(1, 'Al-Falah', 'Ustadz Ahmad', '628123456789'),
-(2, 'Ar-Rahman', 'Ustadz Ali', '628987654321'),
+(1, 'imam nafi', 'Ustadz zaky', '6281324279229'),
+(2, 'Ar-Rahman', 'Ustadz azkal', '6289514173858'),
 (3, 'An-Nur', 'Ustadzah Siti', '628111223344');

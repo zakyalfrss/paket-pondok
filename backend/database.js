@@ -4,7 +4,7 @@ require('dotenv').config();
 const dbConfig = {
     host: process.env.DB_HOST || 'localhost',
     user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
+    password: process.env.DB_PASSWORD || '', // Password MySQL lokal
     database: process.env.DB_NAME || 'paket_pondok',
     port: 3306,
     waitForConnections: true,
@@ -12,14 +12,19 @@ const dbConfig = {
     queueLimit: 0
 };
 
+console.log('🔧 Database configuration:', {
+    host: dbConfig.host,
+    user: dbConfig.user, 
+    database: dbConfig.database
+});
+
 const pool = mysql.createPool(dbConfig);
 
+// Function testConnection yang lebih simple
 async function testConnection() {
     try {
         const connection = await pool.getConnection();
-        
         await connection.execute('SELECT 1');
-        
         connection.release();
         console.log('✅ Database connected successfully');
         return true;
@@ -28,6 +33,8 @@ async function testConnection() {
         return false;
     }
 }
+
+// ... rest of your existing functions tetap sama
 
 async function query(sql, params = []) {
     try {
@@ -104,7 +111,6 @@ async function updateBarangKondisi(id_barang, kondisi) {
     
     return result;
 }
-
 
 async function deleteBarang(id_barang) {
     const connection = await pool.getConnection();
@@ -228,11 +234,39 @@ async function getTableStructure() {
         return null;
     }
 }
+async function getAllKobong() {
+    return await query('SELECT * FROM kobong ORDER BY nama_kamar');
+}
 
+async function getKobongById(id) {
+    const sql = 'SELECT * FROM kobong WHERE id_kobong = ?';
+    const results = await query(sql, [id]);
+    return results[0];
+}
+
+async function addKobong(kobongData) {
+    const sql = 'INSERT INTO kobong (nama_kamar, nama_pembimbing, no_wa) VALUES (?, ?, ?)';
+    return await query(sql, [kobongData.nama_kamar, kobongData.nama_pembimbing, kobongData.no_wa]);
+}
+
+async function updateKobong(id, kobongData) {
+    const sql = 'UPDATE kobong SET nama_kamar = ?, nama_pembimbing = ?, no_wa = ? WHERE id_kobong = ?';
+    return await query(sql, [kobongData.nama_kamar, kobongData.nama_pembimbing, kobongData.no_wa, id]);
+}
+
+async function deleteKobong(id) {
+    const sql = 'DELETE FROM kobong WHERE id_kobong = ?';
+    return await query(sql, [id]);
+}
+// PASTIKAN SEMUA FUNCTION DIEKSPORT
 module.exports = {
     testConnection,
     query,
     getAllKobong,
+    getKobongById,
+    addKobong,
+    updateKobong,
+    deleteKobong,
     getAllBarang,
     addBarang,
     updateBarangStatus,
@@ -241,5 +275,5 @@ module.exports = {
     getBarangById,
     getBarangCepatBasi,
     getLogAktivitas,
-    getTableStructure // optional untuk debugging
+    getTableStructure
 };
