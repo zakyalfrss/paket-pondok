@@ -1,11 +1,12 @@
 {
   "name": "paket-pondok-backend",
   "version": "1.0.0",
-  "description": "Sistem Manajemen Paket Pondok",
+  "description": "Sistem Manajemen Paket Pondok - Simplified Version",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "nodemon server.js"
+    "dev": "nodemon server.js",
+    "init-db": "node -e \"require('./database').initializeDatabase()\""
   },
   "dependencies": {
     "express": "^4.18.2",
@@ -20,5 +21,8 @@
   },
   "devDependencies": {
     "nodemon": "^3.0.1"
-  }
+  },
+  "keywords": ["paket", "pondok", "management", "system"],
+  "author": "Alf-Paket Team",
+  "license": "MIT"
 }

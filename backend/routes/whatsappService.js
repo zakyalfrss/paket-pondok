@@ -21,7 +21,6 @@ class WhatsAppService {
           "--no-zygote",
           "--disable-gpu"
         ]
-        // HAPUS executablePath untuk Windows
       }
     });
 
@@ -36,15 +35,14 @@ class WhatsAppService {
     console.log("🔧 Setting up WhatsApp events...");
 
     this.client.on("qr", async (qr) => {
-      console.log("📱 QR Code received, generating for frontend...");
+      console.log("📱 QR Code received...");
       try {
-        // Generate QR code untuk frontend
         this.qrCode = await qrcode.toDataURL(qr);
         console.log("✅ QR Code generated for frontend");
         this.notifyStatusChange();
       } catch (error) {
         console.error("❌ Error generating QR code:", error);
-        this.qrCode = qr; // Fallback
+        this.qrCode = qr;
         this.notifyStatusChange();
       }
     });
@@ -56,32 +54,125 @@ class WhatsAppService {
       this.notifyStatusChange();
     });
 
-    this.client.on("authenticated", () => {
-      console.log("✅ WhatsApp authenticated successfully");
-    });
-
-    this.client.on("auth_failure", (msg) => {
-      console.error("❌ WhatsApp auth failed:", msg);
-      this.isReady = false;
-      this.qrCode = null;
-      this.notifyStatusChange();
-    });
-
     this.client.on("disconnected", (reason) => {
       console.log("❌ WhatsApp disconnected:", reason);
       this.isReady = false;
       this.qrCode = null;
       this.notifyStatusChange();
       
-      // Auto restart
       setTimeout(() => {
-        console.log("🔄 Auto-restarting WhatsApp...");
         this.initialize();
       }, 5000);
     });
   }
 
-  // Untuk frontend bisa subscribe ke status changes
+  // ===== NOTIFIKASI BARU =====
+  
+  // Notifikasi paket masuk
+  async sendNotifPaketMasuk(barang) {
+    if (!this.isReady) {
+      console.log("❌ WhatsApp not ready, cannot send notification");
+      return false;
+    }
+
+    try {
+      const message = `📦 *PAKET BARU DATANG* 📦
+
+*Detail Paket:*
+• Untuk: *${barang.nama_penerima}*
+• Pengirim: ${barang.nama_pengirim}
+• Jenis: ${barang.jenis_barang}
+• Kamar: ${barang.nama_kamar}
+• Waktu: ${new Date(barang.tanggal_datang).toLocaleString('id-ID')}
+
+📝 *Catatan:* ${barang.catatan || "Tidak ada catatan"}
+
+_Segera ambil paket di loket pondok!_
+
+*-- Sistem Paket Pondok --*`;
+
+      // Kirim ke semua yang punya WhatsApp
+      await this.broadcastToAll(message);
+      
+      console.log(`✅ Notifikasi paket masuk terkirim untuk ${barang.nama_penerima}`);
+      return true;
+
+    } catch (error) {
+      console.error("❌ Error sending paket masuk notification:", error.message);
+      return false;
+    }
+  }
+
+  // Notifikasi paket diambil
+  async sendNotifPaketDiambil(barang) {
+    if (!this.isReady) {
+      console.log("❌ WhatsApp not ready, cannot send notification");
+      return false;
+    }
+
+    try {
+      const message = `✅ *PAKET SUDAH DIAMBIL* ✅
+
+*Detail Paket:*
+• Penerima: *${barang.nama_penerima}*
+• Pengirim: ${barang.nama_pengirim}
+• Jenis: ${barang.jenis_barang}
+• Kamar: ${barang.nama_kamar}
+• Waktu Diambil: ${new Date().toLocaleString('id-ID')}
+
+📝 *Catatan:* ${barang.catatan || "Tidak ada catatan"}
+
+_Paket sudah diterima dengan baik_
+
+*-- Sistem Paket Pondok --*`;
+
+      // Kirim ke semua yang punya WhatsApp
+      await this.broadcastToAll(message);
+      
+      console.log(`✅ Notifikasi paket diambil terkirim untuk ${barang.nama_penerima}`);
+      return true;
+
+    } catch (error) {
+      console.error("❌ Error sending paket diambil notification:", error.message);
+      return false;
+    }
+  }
+
+  // Broadcast ke semua yang perlu terima notif
+  async broadcastToAll(message) {
+    try {
+      // Ambil semua data kobong yang perlu dikirimi notif
+      const allKobong = await db.getAllKobong();
+      
+      for (const kobong of allKobong) {
+        // Format nomor WhatsApp
+        let phoneNumber = kobong.no_wa.trim().replace(/\D/g, "");
+        
+        if (phoneNumber.startsWith("0")) {
+          phoneNumber = "62" + phoneNumber.substring(1);
+        }
+        if (!phoneNumber.startsWith("62")) {
+          phoneNumber = "62" + phoneNumber;
+        }
+
+        if (phoneNumber.length >= 10) {
+          const chatId = `${phoneNumber}@c.us`;
+          
+          try {
+            await this.client.sendMessage(chatId, message);
+            console.log(`📤 Notifikasi terkirim ke ${kobong.nama_pembimbing}`);
+          } catch (error) {
+            console.error(`❌ Gagal kirim ke ${kobong.nama_pembimbing}:`, error.message);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("❌ Error in broadcast:", error);
+    }
+  }
+
+  // ===== FUNCTION LAIN =====
+  
   onStatusChange(callback) {
     this.statusListeners.push(callback);
   }
@@ -113,54 +204,6 @@ class WhatsAppService {
       qrCode: this.qrCode,
       timestamp: new Date().toISOString()
     };
-  }
-
-  async sendReminder(barang) {
-    if (!this.isReady) {
-      console.log("❌ WhatsApp not ready, cannot send reminder");
-      return false;
-    }
-
-    try {
-      let phoneNumber = barang.no_wa.trim();
-      phoneNumber = phoneNumber.replace(/\D/g, "");
-
-      // Format nomor
-      if (phoneNumber.startsWith("0")) {
-        phoneNumber = "62" + phoneNumber.substring(1);
-      }
-      if (!phoneNumber.startsWith("62")) {
-        phoneNumber = "62" + phoneNumber;
-      }
-
-      console.log(`📤 Sending reminder to: ${phoneNumber} (${barang.nama_pembimbing})`);
-
-      const chatId = `${phoneNumber}@c.us`;
-
-      const message = `🚨 *SEGERA AMBIL* 🚨
-
-📦 *Detail Paket:*
-• Jenis: ${barang.jenis_barang}
-• Pengirim: *${barang.nama_pengirim}*  
-• Penerima: *${barang.nama_penerima}*
-• Kamar: ${barang.nama_kamar}
-• Datang: ${new Date(barang.tanggal_datang).toLocaleDateString('id-ID')}
-
-💡 *Pesan:*
-Paket ini cepat basi, jika tidak diambil dalam 24 jam, maka akan menjadi hak keamanan.
-
-📝 *Catatan:* ${barang.catatan || "Tidak ada catatan"}
-
-*-- Sistem Paket Pondok --*`;
-
-      await this.client.sendMessage(chatId, message);
-      console.log(`✅ Notifikasi terkirim ke ${barang.nama_pembimbing}`);
-      
-      return true;
-    } catch (error) {
-      console.error("❌ Error sending reminder:", error.message);
-      return false;
-    }
   }
 
   async restart() {

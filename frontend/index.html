@@ -1,461 +1,479 @@
 <!DOCTYPE html>
 <html lang="id">
-  <head>
+<head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Alf-Paket</title>
+    <title>Alf-Paket - Sistem Manajemen Paket Pondok</title>
     <link rel="stylesheet" href="style.css" />
-    <link
-      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css"
-      rel="stylesheet"
-    />
-  </head>
-  <body>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+</head>
+<body>
     <div class="container">
-      <header>
-        <h1><i class="fas fa-box-open"></i> Sistem Manajemen Paket Pondok</h1>
-        <div class="status-bar">
-          <div class="status-item">
-            <span class="status-label">Database:</span>
-            <span id="db-status" class="status offline">Offline</span>
-          </div>
-          <div class="status-item clickable" onclick="showQRModal()">
-            <span class="status-label">Notifikasi:</span>
-            <span id="wa-status" class="status offline">Offline</span>
-          </div>
-        </div>
-      </header>
-
-      <nav class="tabs">
-        <button class="tab-button active" onclick="openTab('input')">
-          <i class="fas fa-plus"></i> Input Paket
-        </button>
-        <button class="tab-button" onclick="openTab('daftar')">
-          <i class="fas fa-list"></i> Daftar Paket
-        </button>
-        <!-- TAB BARU UNTUK KAMAR -->
-        <button class="tab-button" onclick="openTab('kamar')">
-          <i class="fas fa-door-closed"></i> Data Kamar
-        </button>
-        <button class="tab-button" onclick="openTab('log')">
-          <i class="fas fa-history"></i> Log Aktivitas
-        </button>
-        <button class="tab-button" onclick="openTab('laporan')">
-          <i class="fas fa-chart-bar"></i> Laporan
-        </button>
-      </nav>
-      <!-- Tambah tab content untuk kamar -->
-      <div id="kamar" class="tab-content">
-        <div class="card">
-          <div class="card-header">
-            <h2><i class="fas fa-door-closed"></i> Data Kamar (Kobong)</h2>
-            <button onclick="showKamarForm()" class="btn-primary">
-              <i class="fas fa-plus"></i> Tambah Kamar
-            </button>
-          </div>
-
-          <!-- Form Tambah/Edit Kamar -->
-          <div
-            id="form-kamar-container"
-            style="
-              display: none;
-              margin-bottom: 20px;
-              padding: 20px;
-              background: #f9f9f9;
-              border-radius: 8px;
-            "
-          >
-            <h3 id="form-kamar-title">Tambah Kamar Baru</h3>
-            <form id="form-kamar">
-              <input type="hidden" id="kamar-id" />
-              <div class="form-row">
-                <div class="form-group">
-                  <label for="kamar-nama">Nama Kamar:</label>
-                  <input type="text" id="kamar-nama" required />
+        <!-- ============================================= -->
+        <!-- HEADER & STATUS BAR -->
+        <!-- ============================================= -->
+        <header>
+            <h1><i class="fas fa-box-open"></i> Sistem Manajemen Paket Pondok</h1>
+            <div class="status-bar">
+                <div class="status-item">
+                    <span class="status-label">Database:</span>
+                    <span id="db-status" class="status offline">Offline</span>
                 </div>
-                <div class="form-group">
-                  <label for="kamar-pembimbing">Nama Pembimbing:</label>
-                  <input type="text" id="kamar-pembimbing" required />
+                <div class="status-item clickable" onclick="showQRModal()">
+                    <span class="status-label">Notifikasi:</span>
+                    <span id="wa-status" class="status offline">Offline</span>
                 </div>
-                <div class="form-group">
-                  <label for="kamar-nowa">No WhatsApp:</label>
-                  <input
-                    type="text"
-                    id="kamar-nowa"
-                    required
-                    placeholder="628123456789"
-                  />
+            </div>
+        </header>
+
+        <!-- ============================================= -->
+        <!-- NAVIGATION TABS -->
+        <!-- ============================================= -->
+        <nav class="tabs">
+            <button class="tab-button active" onclick="openTab('input', event)">
+                <i class="fas fa-plus"></i> Input Paket
+            </button>
+            <button class="tab-button" onclick="openTab('daftar', event)">
+                <i class="fas fa-list"></i> Daftar Paket
+            </button>
+            <button class="tab-button" onclick="openTab('data-penerima', event)">
+                <i class="fas fa-users"></i> Data Penerima
+            </button>
+            <button class="tab-button" onclick="openTab('log', event)">
+                <i class="fas fa-history"></i> Log Aktivitas
+            </button>
+            <button class="tab-button" onclick="openTab('laporan', event)">
+                <i class="fas fa-chart-bar"></i> Laporan
+            </button>
+        </nav>
+
+        <!-- ============================================= -->
+        <!-- TAB: INPUT PAKET -->
+        <!-- ============================================= -->
+        <div id="input" class="tab-content active">
+            <div class="card">
+                <h2><i class="fas fa-box"></i> Input Paket Baru</h2>
+                <form id="form-paket">
+                    <!-- Pilih Jenis Kelamin Penerima -->
+                    <div class="form-group">
+                        <label for="jenis_kelamin">Untuk:</label>
+                        <select id="jenis_kelamin" required onchange="loadTipePenerima()">
+                            <option value="">Pilih Jenis Kelamin</option>
+                            <option value="putra">Putra</option>
+                            <option value="putri">Putri</option>
+                        </select>
+                    </div>
+
+                    <!-- Pilih Tipe Penerima -->
+                    <div class="form-group">
+                        <label for="tipe_penerima">Tipe Penerima:</label>
+                        <select id="tipe_penerima" required onchange="loadPenerimaOptions()">
+                            <option value="">Pilih Tipe Penerima</option>
+                            <!-- Options akan di-load via JavaScript -->
+                        </select>
+                    </div>
+
+                    <!-- Pilih Penerima Spesifik -->
+                    <div class="form-group">
+                        <label for="penerima">Pilih Penerima:</label>
+                        <select id="penerima" required>
+                            <option value="">Pilih Penerima</option>
+                            <!-- Options akan di-load via JavaScript -->
+                        </select>
+                    </div>
+
+                    <!-- Input Nama Santri (jika tipe santri) -->
+                    <div id="form-santri" style="display: none;">
+                        <div class="form-group">
+                            <label for="nama_santri">Nama Santri:</label>
+                            <input type="text" id="nama_santri" placeholder="Masukkan nama santri">
+                        </div>
+                    </div>
+
+                    <!-- Informasi Penerima yang Dipilih -->
+                    <div id="penerima-info" class="selected-item" style="display: none;"></div>
+
+                    <!-- Data Pengirim dan Barang -->
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="nama_pengirim">Nama Pengirim:</label>
+                            <input type="text" id="nama_pengirim" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="jenis_barang">Jenis Barang:</label>
+                            <select id="jenis_barang" required onchange="toggleCustomJenisBarang()">
+                                <option value="">Pilih Jenis</option>
+                                <option value="Makanan">Makanan</option>
+                                <option value="Minuman">Minuman</option>
+                                <option value="Pakaian">Pakaian</option>
+                                <option value="Buku">Buku</option>
+                                <option value="Obat">Obat</option>
+                                <option value="Lainnya">Lainnya</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <!-- Input Custom Jenis Barang (muncul hanya ketika pilih Lainnya) -->
+                    <div id="custom-jenis-barang-container" class="form-group" style="display: none;">
+                        <label for="custom_jenis_barang">Jenis Barang Lainnya:</label>
+                        <input type="text" id="custom_jenis_barang" placeholder="Masukkan jenis barang lainnya...">
+                    </div>
+
+                    <!-- Kondisi dan Catatan -->
+                    <div class="form-group">
+                        <label for="kondisi">Kondisi Barang:</label>
+                        <select id="kondisi" required>
+                            <option value="baik">Baik</option>
+                            <option value="cepat_basi">Cepat Basi</option>
+                            <option value="rusak">Rusak</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="catatan">Catatan:</label>
+                        <textarea id="catatan" rows="3" placeholder="Keterangan tambahan..."></textarea>
+                    </div>
+
+                    <!-- Submit Button -->
+                    <button type="submit" class="btn-primary">
+                        <i class="fas fa-save"></i> Simpan Paket
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- TAB: DAFTAR PAKET -->
+        <!-- ============================================= -->
+        <div id="daftar" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-boxes"></i> Daftar Paket</h2>
+                    <div class="filters">
+                        <select id="filter-status">
+                            <option value="">Semua Status</option>
+                            <option value="masuk">Masuk</option>
+                            <option value="diambil">Diambil</option>
+                            <option value="rusak">Rusak</option>
+                        </select>
+                        <select id="filter-jenis-kelamin">
+                            <option value="">Semua Jenis Kelamin</option>
+                            <option value="putra">Putra</option>
+                            <option value="putri">Putri</option>
+                        </select>
+                        <select id="filter-jenis-barang">
+                            <option value="">Semua Jenis Barang</option>
+                            <option value="Makanan">Makanan</option>
+                            <option value="Minuman">Minuman</option>
+                            <option value="Pakaian">Pakaian</option>
+                            <option value="Buku">Buku</option>
+                            <option value="Obat">Obat</option>
+                            <option value="Lainnya">Lainnya</option>
+                        </select>
+                    </div>
                 </div>
-              </div>
-              <div class="form-actions">
-                <button type="submit" class="btn-primary">
-                  <i class="fas fa-save"></i> Simpan
-                </button>
-                <button
-                  type="button"
-                  onclick="hideKamarForm()"
-                  class="btn-secondary"
-                >
-                  <i class="fas fa-times"></i> Batal
-                </button>
-              </div>
-            </form>
-          </div>
-
-          <!-- Daftar Kamar -->
-          <div class="table-container">
-            <table id="table-kamar">
-              <thead>
-                <tr>
-                  <th>No</th>
-                  <th>Nama Kamar</th>
-                  <th>Pembimbing</th>
-                  <th>No WhatsApp</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-      <!-- Tab Input Paket -->
-      <div id="input" class="tab-content active">
-        <div class="card">
-          <h2><i class="fas fa-box"></i> Input Paket Baru</h2>
-          <form id="form-paket">
-            <div class="form-group">
-              <label for="id_kobong">Kamar (Kobong):</label>
-              <select id="id_kobong" required>
-                <option value="">Pilih Kamar</option>
-              </select>
+                <div class="table-container">
+                    <table id="table-paket">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Tanggal</th>
+                                <th>Jenis Kelamin</th>
+                                <th>Penerima</th>
+                                <th>Pengirim</th>
+                                <th>Jenis Barang</th>
+                                <th>Status</th>
+                                <th>Kondisi</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="nama_pengirim">Nama Pengirim:</label>
-                <input type="text" id="nama_pengirim" required />
-              </div>
-              <div class="form-group">
-                <label for="nama_penerima">Nama Penerima:</label>
-                <input type="text" id="nama_penerima" required />
-              </div>
-            </div>
-
-            <div class="form-row">
-              <div class="form-group">
-                <label for="jenis_barang">Jenis Barang:</label>
-                <select id="jenis_barang" required>
-                  <option value="">Pilih Jenis</option>
-                  <option value="Makanan">Makanan</option>
-                  <option value="Minuman">Minuman</option>
-                  <option value="Pakaian">Pakaian</option>
-                  <option value="Buku">Buku</option>
-                  <option value="Obat">Obat</option>
-                  <option value="Lainnya">Lainnya</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="kondisi">Kondisi Barang:</label>
-                <select id="kondisi" required>
-                  <option value="baik">Baik</option>
-                  <option value="cepat_basi">Cepat Basi</option>
-                  <option value="rusak">Rusak</option>
-                </select>
-              </div>
-            </div>
-
-            <div class="form-group">
-              <label for="catatan">Catatan:</label>
-              <textarea
-                id="catatan"
-                rows="3"
-                placeholder="Keterangan tambahan..."
-              ></textarea>
-            </div>
-
-            <button type="submit" class="btn-primary">
-              <i class="fas fa-save"></i> Simpan Paket
-            </button>
-          </form>
-        </div>
-      </div>
-
-      <!-- Tab Daftar Paket -->
-      <div id="daftar" class="tab-content">
-        <div class="card">
-          <div class="card-header">
-            <h2><i class="fas fa-boxes"></i> Daftar Paket</h2>
-            <div class="filters">
-              <select id="filter-kobong">
-                <option value="">Semua Kamar</option>
-              </select>
-              <select id="filter-status">
-                <option value="">Semua Status</option>
-                <option value="masuk">Masuk</option>
-                <option value="diambil">Diambil</option>
-                <option value="rusak">Rusak</option>
-              </select>
-            </div>
-          </div>
-          <div class="table-container">
-            <table id="table-paket">
-              <thead>
-                <tr>
-                  <th>No</th>
-                  <th>Tanggal</th>
-                  <th>Kamar</th>
-                  <th>Pengirim</th>
-                  <th>Penerima</th>
-                  <th>Jenis</th>
-                  <th>Status</th>
-                  <th>Kondisi</th>
-                  <th>Aksi</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab Log Aktivitas -->
-      <div id="log" class="tab-content">
-        <div class="card">
-          <h2><i class="fas fa-history"></i> Log Aktivitas</h2>
-          <div class="table-container">
-            <table id="table-log">
-              <thead>
-                <tr>
-                  <th>Waktu</th>
-                  <th>Aksi</th>
-                  <th>Deskripsi</th>
-                  <th>Penerima</th>
-                  <th>Kamar</th>
-                </tr>
-              </thead>
-              <tbody></tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-
-      <!-- Tab Laporan -->
-      <div id="laporan" class="tab-content">
-        <div class="card">
-          <h2><i class="fas fa-chart-bar"></i> Generate Laporan</h2>
-
-          <div class="form-group">
-            <label for="report-type">Jenis Laporan:</label>
-            <select id="report-type" onchange="toggleReportFields()">
-              <option value="mingguan">Laporan Mingguan</option>
-              <option value="bulanan">Laporan Bulanan</option>
-            </select>
-          </div>
-
-          <div id="weekly-fields">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="tanggal_awal">Tanggal Awal:</label>
-                <input type="date" id="tanggal_awal" />
-              </div>
-              <div class="form-group">
-                <label for="tanggal_akhir">Tanggal Akhir:</label>
-                <input type="date" id="tanggal_akhir" />
-              </div>
-            </div>
-          </div>
-
-          <div id="monthly-fields" style="display: none">
-            <div class="form-row">
-              <div class="form-group">
-                <label for="bulan">Bulan:</label>
-                <select id="bulan">
-                  <option value="1">Januari</option>
-                  <option value="2">Februari</option>
-                  <option value="3">Maret</option>
-                  <option value="4">April</option>
-                  <option value="5">Mei</option>
-                  <option value="6">Juni</option>
-                  <option value="7">Juli</option>
-                  <option value="8">Agustus</option>
-                  <option value="9">September</option>
-                  <option value="10">Oktober</option>
-                  <option value="11">November</option>
-                  <option value="12">Desember</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label for="tahun">Tahun:</label>
-                <input
-                  type="number"
-                  id="tahun"
-                  min="2023"
-                  max="2030"
-                  value="2024"
-                />
-              </div>
-            </div>
-          </div>
-
-          <div class="report-actions">
-            <button onclick="generateReport('excel')" class="btn-success">
-              <i class="fas fa-file-excel"></i> Export Excel
-            </button>
-            <button onclick="generateReport('pdf')" class="btn-danger">
-              <i class="fas fa-file-pdf"></i> Export PDF
-            </button>
-          </div>
         </div>
 
-        <!-- Statistik Cepat -->
-        <div class="card">
-          <h2><i class="fas fa-chart-pie"></i> Statistik Cepat</h2>
-          <div class="stats-grid">
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-box"></i>
-              </div>
-              <div class="stat-info">
-                <h3 id="total-paket">0</h3>
-                <p>Total Paket</p>
-              </div>
+        <!-- ============================================= -->
+        <!-- TAB: DATA PENERIMA -->
+        <!-- ============================================= -->
+        <!-- TAB: DATA PENERIMA -->
+        <div id="data-penerima" class="tab-content">
+            <div class="card">
+                <div class="card-header">
+                    <h2><i class="fas fa-users"></i> Data Penerima Paket</h2>
+                    <div class="header-actions">
+                        <div class="filters">
+                            <select id="filter-penerima-jenis-kelamin">
+                                <option value="">Semua Jenis Kelamin</option>
+                                <option value="putra">Putra</option>
+                                <option value="putri">Putri</option>
+                            </select>
+                            <select id="filter-penerima-role">
+                                <option value="">Semua Role</option>
+                                <option value="pembimbing">Pembimbing</option>
+                                <option value="pengasuh">Pengasuh</option>
+                                <option value="takhosus">Takhosus</option>
+                                <option value="pegawai">Pegawai</option>
+                            </select>
+                        </div>
+                        <button onclick="showPenerimaForm()" class="btn-primary">
+                            <i class="fas fa-plus"></i> Tambah Penerima
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Form Tambah/Edit Penerima -->
+                <div id="form-penerima-container" style="display: none; margin-bottom: 20px; padding: 20px; background: #f9f9f9; border-radius: 8px;">
+                    <h3 id="form-penerima-title">Tambah Penerima Baru</h3>
+                    <form id="form-penerima">
+                        <input type="hidden" id="penerima-id">
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="penerima-nama">Nama Penerima:</label>
+                                <input type="text" id="penerima-nama" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="penerima-kamar">Nama Kamar:</label>
+                                <input type="text" id="penerima-kamar" required>
+                            </div>
+                        </div>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="penerima-jenis-kelamin">Jenis Kelamin:</label>
+                                <select id="penerima-jenis-kelamin" required>
+                                    <option value="">Pilih Jenis Kelamin</option>
+                                    <option value="putra">Putra</option>
+                                    <option value="putri">Putri</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label for="penerima-role">Role:</label>
+                                <select id="penerima-role" required>
+                                    <option value="">Pilih Role</option>
+                                    <option value="pembimbing">Pembimbing</option>
+                                    <option value="pengasuh">Pengasuh</option>
+                                    <option value="takhosus">Takhosus</option>
+                                    <option value="pegawai">Pegawai</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="penerima-nowa">No WhatsApp:</label>
+                            <input type="text" id="penerima-nowa" required placeholder="628123456789">
+                        </div>
+                        <div class="form-actions">
+                            <button type="submit" class="btn-primary">
+                                <i class="fas fa-save"></i> Simpan
+                            </button>
+                            <button type="button" onclick="hidePenerimaForm()" class="btn-secondary">
+                                <i class="fas fa-times"></i> Batal
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+                <!-- Daftar Penerima -->
+                <div class="table-container">
+                    <table id="table-penerima">
+                        <thead>
+                            <tr>
+                                <th>No</th>
+                                <th>Nama Penerima</th>
+                                <th>Kamar</th>
+                                <th>Jenis Kelamin</th>
+                                <th>Role</th>
+                                <th>No WhatsApp</th>
+                                <th>Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
             </div>
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-check-circle"></i>
-              </div>
-              <div class="stat-info">
-                <h3 id="paket-diambil">0</h3>
-                <p>Sudah Diambil</p>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-clock"></i>
-              </div>
-              <div class="stat-info">
-                <h3 id="paket-masuk">0</h3>
-                <p>Belum Diambil</p>
-              </div>
-            </div>
-            <div class="stat-card">
-              <div class="stat-icon">
-                <i class="fas fa-exclamation-triangle"></i>
-              </div>
-              <div class="stat-info">
-                <h3 id="paket-cepat-basi">0</h3>
-                <p>Cepat Basi</p>
-              </div>
-            </div>
-          </div>
         </div>
-      </div>
+
+        <!-- ============================================= -->
+        <!-- TAB: LOG AKTIVITAS -->
+        <!-- ============================================= -->
+        <div id="log" class="tab-content">
+            <div class="card">
+                <h2><i class="fas fa-history"></i> Log Aktivitas</h2>
+                <div class="table-container">
+                    <table id="table-log">
+                        <thead>
+                            <tr>
+                                <th>Waktu</th>
+                                <th>Aksi</th>
+                                <th>Deskripsi</th>
+                                <th>Penerima</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- ============================================= -->
+        <!-- TAB: LAPORAN -->
+        <!-- ============================================= -->
+        <div id="laporan" class="tab-content">
+            <div class="card">
+                <h2><i class="fas fa-chart-bar"></i> Generate Laporan</h2>
+
+                <div class="form-group">
+                    <label for="report-type">Jenis Laporan:</label>
+                    <select id="report-type" onchange="toggleReportFields()">
+                        <option value="mingguan">Laporan Mingguan</option>
+                        <option value="bulanan">Laporan Bulanan</option>
+                    </select>
+                </div>
+
+                <!-- Fields untuk laporan mingguan -->
+                <div id="weekly-fields">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="tanggal_awal">Tanggal Awal:</label>
+                            <input type="date" id="tanggal_awal">
+                        </div>
+                        <div class="form-group">
+                            <label for="tanggal_akhir">Tanggal Akhir:</label>
+                            <input type="date" id="tanggal_akhir">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fields untuk laporan bulanan -->
+                <div id="monthly-fields" style="display: none">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="bulan">Bulan:</label>
+                            <select id="bulan">
+                                <option value="1">Januari</option>
+                                <option value="2">Februari</option>
+                                <option value="3">Maret</option>
+                                <option value="4">April</option>
+                                <option value="5">Mei</option>
+                                <option value="6">Juni</option>
+                                <option value="7">Juli</option>
+                                <option value="8">Agustus</option>
+                                <option value="9">September</option>
+                                <option value="10">Oktober</option>
+                                <option value="11">November</option>
+                                <option value="12">Desember</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="tahun">Tahun:</label>
+                            <input type="number" id="tahun" min="2023" max="2030" value="2024">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tombol Generate Laporan -->
+                <div class="report-actions">
+                    <button onclick="generateReport('excel')" class="btn-success">
+                        <i class="fas fa-file-excel"></i> Export Excel
+                    </button>
+                    <button onclick="generateReport('pdf')" class="btn-danger">
+                        <i class="fas fa-file-pdf"></i> Export PDF
+                    </button>
+                </div>
+            </div>
+
+            <!-- Statistik Cepat -->
+            <div class="card">
+                <h2><i class="fas fa-chart-pie"></i> Statistik Cepat</h2>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-box"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="total-paket">0</h3>
+                            <p>Total Paket</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-circle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="paket-diambil">0</h3>
+                            <p>Sudah Diambil</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="paket-masuk">0</h3>
+                            <p>Belum Diambil</p>
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-exclamation-triangle"></i>
+                        </div>
+                        <div class="stat-info">
+                            <h3 id="paket-cepat-basi">0</h3>
+                            <p>Cepat Basi</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- Modal untuk detail dan edit -->
+    <!-- ============================================= -->
+    <!-- MODAL: DETAIL PAKET -->
+    <!-- ============================================= -->
     <div id="modal" class="modal">
-      <div class="modal-content">
-        <span class="close" onclick="closeModal()">&times;</span>
-        <h3>Detail Paket</h3>
-        <div id="modal-body"></div>
-      </div>
+        <div class="modal-content">
+            <span class="close" onclick="closeModal()">&times;</span>
+            <h3>Detail Paket</h3>
+            <div id="modal-body"></div>
+        </div>
     </div>
 
-    <!-- Modal untuk QR Code WhatsApp -->
+    <!-- ============================================= -->
+    <!-- MODAL: QR CODE WHATSAPP -->
+    <!-- ============================================= -->
     <div id="qr-modal" class="modal">
-      <div class="modal-content qr-modal">
-        <span class="close" onclick="closeQRModal()">&times;</span>
-        <h3><i class="fab fa-whatsapp"></i> Scan QR Code untuk Notifikasi</h3>
-        <div class="qr-container">
-          <div id="qr-code-container" style="display: none">
-            <img id="qr-code-image" src="" alt="QR Code WhatsApp" />
-          </div>
-          <div id="wa-connected" style="display: none">
-            <div class="connected-status">
-              <i class="fas fa-check-circle"></i>
-              <h4>WhatsApp Connected!</h4>
-              <p>
-                WhatsApp berhasil terhubung dan siap mengirim notifikasi
-                otomatis
-              </p>
+        <div class="modal-content qr-modal">
+            <span class="close" onclick="closeQRModal()">&times;</span>
+            <h3><i class="fab fa-whatsapp"></i> Scan QR Code untuk Notifikasi</h3>
+            <div class="qr-container">
+                <div id="qr-code-container" style="display: none">
+                    <img id="qr-code-image" src="" alt="QR Code WhatsApp">
+                </div>
+                <div id="wa-connected" style="display: none">
+                    <div class="connected-status">
+                        <i class="fas fa-check-circle"></i>
+                        <h4>WhatsApp Connected!</h4>
+                        <p>WhatsApp berhasil terhubung dan siap mengirim notifikasi otomatis</p>
+                    </div>
+                </div>
+                <div class="qr-instructions">
+                    <p><strong>Cara menghubungkan:</strong></p>
+                    <ol>
+                        <li>Buka WhatsApp di HP</li>
+                        <li>Tap menu ⋮ → Linked Devices</li>
+                        <li>Tap Link a Device</li>
+                        <li>Scan QR code di atas</li>
+                    </ol>
+                </div>
             </div>
-          </div>
-          <div class="qr-instructions">
-            <p><strong>Cara menghubungkan:</strong></p>
-            <ol>
-              <li>Buka WhatsApp di HP</li>
-              <li>Tap menu ⋮ → Linked Devices</li>
-              <li>Tap Link a Device</li>
-              <li>Scan QR code di atas</li>
-            </ol>
-            <div class="whatsapp-features">
-              <p><strong>Fitur Notifikasi:</strong></p>
-              <ul>
-                <li>🚨 Auto kirim notifikasi untuk makanan cepat basi</li>
-                <li>⏰ Monitoring otomatis setiap 30 menit</li>
-                <li>📱 Langsung ke WA pembimbing kamar</li>
-              </ul>
+            <div class="qr-actions">
+                <button onclick="closeQRModal()" class="btn-secondary">Tutup</button>
+                <button onclick="restartWhatsApp()" class="btn-warning">
+                    <i class="fas fa-sync"></i> Restart WhatsApp
+                </button>
             </div>
-          </div>
         </div>
-        <div class="auto-close-notice">
-          <i class="fas fa-info-circle"></i> Modal ini akan tertutup otomatis
-          dalam <span id="countdown">10</span> detik
-        </div>
-        <div class="qr-actions">
-          <button onclick="closeQRModal()" class="btn-secondary">
-            Tutup Sekarang
-          </button>
-          <button onclick="restartWhatsApp()" class="btn-warning">
-            <i class="fas fa-sync"></i> Restart WhatsApp
-          </button>
-        </div>
-      </div>
     </div>
 
-    <!-- Tambahkan modal preview setelah modal QR -->
-    <div id="preview-modal" class="modal">
-      <div class="modal-content" style="max-width: 90%; width: 1200px">
-        <span class="close" onclick="closePreviewModal()">&times;</span>
-        <h3><i class="fas fa-eye"></i> Preview Laporan</h3>
-        <div class="preview-controls">
-          <div class="preview-info">
-            <span id="preview-type"></span>
-            <span id="preview-period"></span>
-            <span id="preview-total"></span>
-          </div>
-          <div class="preview-actions">
-            <button onclick="downloadReport()" class="btn-success">
-              <i class="fas fa-download"></i> Download
-            </button>
-            <button onclick="closePreviewModal()" class="btn-secondary">
-              <i class="fas fa-times"></i> Tutup
-            </button>
-          </div>
-        </div>
-        <div class="table-container">
-          <table id="preview-table">
-            <thead>
-              <tr>
-                <th>No</th>
-                <th>Tanggal</th>
-                <th>Kamar</th>
-                <th>Pembimbing</th>
-                <th>No WA</th>
-                <th>Pengirim</th>
-                <th>Penerima</th>
-                <th>Jenis Barang</th>
-                <th>Status</th>
-                <th>Kondisi</th>
-                <th>Catatan</th>
-              </tr>
-            </thead>
-            <tbody></tbody>
-          </table>
-        </div>
-      </div>
-    </div>
     <script src="script.js"></script>
-  </body>
+</body>
 </html>
