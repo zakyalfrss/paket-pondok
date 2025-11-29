@@ -1,6 +1,6 @@
 // =============================================
 // SISTEM MANAJEMEN PAKET PONDOK - DATABASE FUNCTIONS
-// Fixed version
+// Fixed version with WhatsApp improvements
 // =============================================
 
 const mysql = require('mysql2/promise');
@@ -192,7 +192,7 @@ async function deleteKobong(id) {
 }
 
 // =============================================
-// BARANG/PAKET FUNCTIONS
+// BARANG/PAKET FUNCTIONS - DIPERBAIKI
 // =============================================
 
 /**
@@ -261,6 +261,20 @@ async function updateBarangStatus(id_barang, status) {
 async function getBarangById(id_barang) {
     const sql = `
         SELECT b.*, k.nama_kamar, k.nama_pembimbing, k.no_wa, k.role
+        FROM barang b 
+        LEFT JOIN kobong k ON b.id_kobong = k.id_kobong 
+        WHERE b.id_barang = ?
+    `;
+    const results = await query(sql, [id_barang]);
+    return results[0];
+}
+
+/**
+ * 🔥 NEW METHOD: Get paket dengan informasi kobong lengkap
+ */
+async function getBarangWithKobong(id_barang) {
+    const sql = `
+        SELECT b.*, k.nama_kamar, k.nama_pembimbing, k.no_wa, k.role, k.jenis_kelamin
         FROM barang b 
         LEFT JOIN kobong k ON b.id_kobong = k.id_kobong 
         WHERE b.id_barang = ?
@@ -347,7 +361,49 @@ async function getLogAktivitas() {
 }
 
 // =============================================
-// MODULE EXPORTS
+// WHATSAPP-RELATED FUNCTIONS - BARU
+// =============================================
+
+/**
+ * 🔥 NEW METHOD: Get semua nomor WhatsApp untuk notifikasi
+ */
+async function getAllWhatsAppNumbers() {
+    const sql = `
+        SELECT no_wa, nama_pembimbing, role, nama_kamar 
+        FROM kobong 
+        WHERE no_wa IS NOT NULL AND no_wa != ''
+    `;
+    return await query(sql);
+}
+
+/**
+ * 🔥 NEW METHOD: Get penerima berdasarkan ID barang
+ */
+async function getPenerimaByBarangId(id_barang) {
+    const sql = `
+        SELECT k.* 
+        FROM kobong k
+        INNER JOIN barang b ON k.id_kobong = b.id_kobong
+        WHERE b.id_barang = ?
+    `;
+    const results = await query(sql, [id_barang]);
+    return results[0] || null;
+}
+
+/**
+ * 🔥 NEW METHOD: Get pembimbing untuk notifikasi tambahan
+ */
+async function getPembimbingByJenisKelamin(jenis_kelamin) {
+    const sql = `
+        SELECT * FROM kobong 
+        WHERE jenis_kelamin = ? AND role = 'pembimbing' 
+        AND no_wa IS NOT NULL AND no_wa != ''
+    `;
+    return await query(sql, [jenis_kelamin]);
+}
+
+// =============================================
+// MODULE EXPORTS - DIPERBAIKI
 // =============================================
 module.exports = {
     testConnection,
@@ -368,7 +424,13 @@ module.exports = {
     updateBarangStatus,
     deleteBarang,
     getBarangById,
+    getBarangWithKobong, // 🔥 NEW
     
     // Log functions
-    getLogAktivitas
+    getLogAktivitas,
+    
+    // 🔥 NEW WhatsApp functions
+    getAllWhatsAppNumbers,
+    getPenerimaByBarangId,
+    getPembimbingByJenisKelamin
 };

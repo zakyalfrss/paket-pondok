@@ -220,12 +220,17 @@ app.post("/api/barang", async (req, res) => {
     
     const result = await db.addBarang(req.body);
     
-    // Kirim notifikasi WhatsApp
-    try {
-      const barang = await db.getBarangById(result.insertId);
-      await whatsappService.sendNotifPaketMasuk(barang);
-    } catch (waError) {
-      console.error('❌ WhatsApp notification failed:', waError.message);
+    // 🔥 PERBAIKAN: Ambil data barang dengan informasi kobong yang lengkap
+    const barang = await db.getBarangWithKobong(result.insertId);
+    
+    // Kirim notifikasi WhatsApp - HANYA untuk barang baru
+    if (barang) {
+      try {
+        await whatsappService.sendNotifPaketMasuk(barang);
+      } catch (waError) {
+        console.error('❌ WhatsApp notification failed:', waError.message);
+        // Jangan gagalkan request hanya karena WhatsApp error
+      }
     }
     
     console.log('✅ Paket added successfully, ID:', result.insertId);
@@ -248,13 +253,16 @@ app.put("/api/barang/:id/status", async (req, res) => {
     
     await db.updateBarangStatus(id, status);
     
-    // Kirim notifikasi jika status diambil
+    // 🔥 PERBAIKAN: Hanya kirim notifikasi jika status diambil dan barang ada
     if (status === 'diambil') {
       try {
-        const barang = await db.getBarangById(id);
-        await whatsappService.sendNotifPaketDiambil(barang);
+        const barang = await db.getBarangWithKobong(id);
+        if (barang) {
+          await whatsappService.sendNotifPaketDiambil(barang);
+        }
       } catch (waError) {
         console.error('❌ WhatsApp notification failed:', waError.message);
+        // Jangan gagalkan request hanya karena WhatsApp error
       }
     }
     
